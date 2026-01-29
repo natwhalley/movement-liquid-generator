@@ -309,53 +309,23 @@ const LiquidGenerator = () => {
   };
 
   const generateWithAI = async (prompt) => {
-    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-    
-    if (!apiKey) {
-      return '// Error: API key not configured. Please add VITE_ANTHROPIC_API_KEY to your environment variables.';
-    }
-
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
+      const response = await fetch('/api/generate', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01"
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [
-            {
-              role: "user",
-              content: `You are a Liquid code generator for Movement's email platform. Generate ONLY the Liquid code (no explanations, no markdown formatting, no backticks) for this request:
-
-"${prompt}"
-
-Available merge tags:
-- Supporter: {{ first_name }}, {{ last_name }}, {{ email }}, {{ join_date }}, {{ membership_status }}
-- Donations: {{ donations.count }}, {{ donations.total }}, {{ donations.average }}, {{ donations.highest }}, {{ donations.previous_amount }}, {{ donations.previous_date }}
-- Organizations: {{ organisations.region }}
-- Regular donations check: {% assign regular_donor = donations.regular_donations | has: "status", "active" %}
-
-Rules:
-1. Use {% if %}, {% elsif %}, {% else %}, {% endif %} for conditions
-2. Always include {% else %} fallbacks
-3. Use proper spacing: {{ variable }} not {{variable}}
-4. Use elsif not elseif
-5. Return ONLY the Liquid code, nothing else`
-            }
-          ],
-        })
+        body: JSON.stringify({ prompt })
       });
 
       const data = await response.json();
-      
-      if (data.content && data.content[0] && data.content[0].text) {
-        let code = data.content[0].text.trim();
-        code = code.replace(/```liquid\n?/g, '').replace(/```\n?/g, '');
-        return code;
+
+      if (data.error) {
+        return '// Error: ' + data.error;
+      }
+
+      if (data.code) {
+        return data.code;
       }
       
       return '// Error: Could not generate code';
