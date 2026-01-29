@@ -9,7 +9,6 @@ const LiquidGenerator = () => {
   const [selectedProfile, setSelectedProfile] = useState('donor-active');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Sample member profiles for preview
   const memberProfiles = {
     'donor-active': {
       name: 'Active Regular Donor',
@@ -173,17 +172,10 @@ const LiquidGenerator = () => {
   const autoFixLiquidCode = (code) => {
     let fixed = code;
     
-    // Fix elseif to elsif
     fixed = fixed.replace(/\{%\s*elseif/g, '{% elsif');
-    
-    // Add spaces after {{ and before }}
     fixed = fixed.replace(/\{\{([^\s])/g, '{{ $1');
     fixed = fixed.replace(/([^\s])\}\}/g, '$1 }}');
-    
-    // Fix === to ==
     fixed = fixed.replace(/===/g, '==');
-    
-    // Ensure proper spacing in logic tags
     fixed = fixed.replace(/\{%([^\s])/g, '{% $1');
     fixed = fixed.replace(/([^\s])%\}/g, '$1 %}');
     
@@ -317,11 +309,19 @@ const LiquidGenerator = () => {
   };
 
   const generateWithAI = async (prompt) => {
+    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+    
+    if (!apiKey) {
+      return '// Error: API key not configured. Please add VITE_ANTHROPIC_API_KEY to your environment variables.';
+    }
+
     try {
       const response = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01"
         },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514",
@@ -354,7 +354,6 @@ Rules:
       
       if (data.content && data.content[0] && data.content[0].text) {
         let code = data.content[0].text.trim();
-        // Remove markdown code blocks if present
         code = code.replace(/```liquid\n?/g, '').replace(/```\n?/g, '');
         return code;
       }
